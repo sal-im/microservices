@@ -1,0 +1,75 @@
+version: '3.9'
+services:
+  mysql:
+    container_name: mysql
+    image: "mysql"
+    restart: "on-failure"
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+    volumes:
+      - '/home/mysql-data:/var/lib/mysql'
+    networks:
+      - my-network      
+  eureka:
+    build:
+      context: ../backend/eurekaServer
+      dockerfile: Dockerfile
+    image: eureka
+    container_name: eureka
+    restart: "on-failure"
+    ports:
+      - "8761:8761"
+    environment:
+      - eureka.client.register-with-eureka=false
+      - eureka.client.fetch-registry=false
+    networks:
+      - my-network
+  gatwayapi:
+    build:
+      context: ../backend/gatewayAPI
+      dockerfile: Dockerfile
+    image: gatewayapi
+    container_name: gatewayapi
+    restart: "on-failure"
+    ports:
+      - "8000:8000"
+    depends_on:
+      - eureka
+    environment:
+      - spring.cloud.gateway.routes[0].id=reclamation-microservice-route
+      - spring.cloud.gateway.routes[0].uri=http://reclamationservice:8082
+      - spring.cloud.gateway.routes[0].predicates[0]=Path=/reclamations/**
+      - spring.cloud.gateway.routes[1].id=eureka-server-routre
+      - spring.cloud.gateway.routes[1].uri=http://eureka:8761
+      - spring.cloud.gateway.routes[1].predicates[0]=Path=/eureka/web
+      - spring.cloud.gateway.routes[1].filters[0]=SetPath=/
+      - spring.cloud.gateway.routes[1].id=eureka-server-static
+      - spring.cloud.gateway.routes[2].uri=http://eureka:8761
+      - spring.cloud.gateway.routes[2].predicates[0]=Path=/eureka/**
+      - logging.level.root=INFO
+      - logging.level.org.springframowrk.cloud.gateway.route.RouteDefinitionLocator = INFO
+      - logging.level.org.springframowrk.cloud.gateway= TRACE
+      - eureka.client.serviceUrl.defaultZone= http://eureka:8761/eureka/
+    networks:
+      - my-network
+  reclamationservice:
+    build:
+      context: ../backend/services/service-reclamation
+      dockerfile: Dockerfile
+    image: "reclamationservice"
+    container_name: reclamationservice
+    restart: "on-failure"
+    ports:
+      - "8082:8082"
+    depends_on:
+      - mysql
+      - eureka
+    environment:
+      eureka.client.serviceUrl.defaultZone: http://eureka:8761/eureka/
+    networks:
+      - my-network
+networks:
+  my-network:
+
+
+      
