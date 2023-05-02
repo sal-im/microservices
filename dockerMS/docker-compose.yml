@@ -55,10 +55,14 @@ services:
       - spring.cloud.gateway.routes[5].id=user-microservice-route
       - spring.cloud.gateway.routes[5].uri=http://userservice:8081
       - spring.cloud.gateway.routes[5].predicates[0]=Path=/users/**
+      - spring.cloud.gateway.routes[6].id=wallet-microservice-route
+      - spring.cloud.gateway.routes[6].uri=http://walletservice:8089
+      - spring.cloud.gateway.routes[6].predicates[0]=Path=/wallet/**
       - logging.level.root=INFO
       - logging.level.org.springframowrk.cloud.gateway.route.RouteDefinitionLocator = INFO
       - logging.level.org.springframowrk.cloud.gateway= TRACE
       - eureka.client.serviceUrl.defaultZone= http://eureka:8761/eureka/
+      
 
     networks:
       - my-network
@@ -126,6 +130,25 @@ services:
       eureka.client.serviceUrl.defaultZone: http://eureka:8761/eureka/
     networks:
       - my-network
+  walletservice:
+    build:
+      context: ../backend/services/service.wallet
+      dockerfile: Dockerfile
+    image: "walletserice"
+    container_name: walletservice
+    restart: "on-failure"
+    ports:
+      - "8089:8089"
+      - "5005:5005"
+    depends_on:
+      - mysql
+      - eureka
+    environment:
+      eureka.client.serviceUrl.defaultZone: http://eureka:8761/eureka/
+      JAVA_TOOL_OPTIONS: "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005"
+
+    networks:
+      - my-network      
 networks:
   my-network:
 
