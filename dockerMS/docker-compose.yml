@@ -114,6 +114,28 @@ services:
       eureka.client.serviceUrl.defaultZone: http://eureka:8761/eureka/
     networks:
       - my-network
+  productservice:
+    build:
+      context: ../backend/services/microserviceProduct
+      dockerfile: Dockerfile
+    image: "productservice"
+    container_name: productservice
+    restart: "on-failure"
+    ports:
+      - "3000:3000"
+    depends_on:
+      - mongodb
+    networks:
+      - my-network
+
+  mongodb:
+    image: mongo
+    container_name: mongodb
+    ports:
+      - "27017:27017"
+    networks:
+      - my-network
+
   userservice:
     build:
       context: ../backend/services/user-service
@@ -151,6 +173,8 @@ services:
       - my-network      
 networks:
   my-network:
+
+
 
 
 
